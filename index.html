@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>알록달록 그림 짝꿍</title>
+  <style>
+    :root {
+      --ink: #51465e;
+      --muted: #81768d;
+      --pink: #ffcfdf;
+      --lavender: #e5ddff;
+      --mint: #d7f5e9;
+      --yellow: #fff0b8;
+      --paper: #fffdfb;
+      --line: #eee5f0;
+      --shadow: 0 8px 24px rgba(88, 65, 104, .10);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      padding: 20px;
+      color: var(--ink);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Malgun Gothic", sans-serif;
+      background:
+        radial-gradient(circle at 10% 10%, #fff0f5 0, transparent 28%),
+        radial-gradient(circle at 90% 15%, #eaf9f1 0, transparent 30%),
+        #f8f5ff;
+    }
+
+    button { font: inherit; }
+
+    .app {
+      width: min(760px, 100%);
+      margin: 0 auto;
+      padding: clamp(18px, 4vw, 34px);
+      border: 1px solid rgba(255,255,255,.9);
+      border-radius: 28px;
+      background: rgba(255, 253, 251, .94);
+      box-shadow: var(--shadow);
+    }
+
+    header { text-align: center; margin-bottom: 20px; }
+
+    .eyebrow {
+      display: inline-block;
+      margin-bottom: 8px;
+      padding: 5px 12px;
+      border-radius: 999px;
+      background: var(--mint);
+      font-size: .82rem;
+      font-weight: 700;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(1.7rem, 5vw, 2.5rem);
+      letter-spacing: -.04em;
+    }
+
+    .subtitle { margin: 8px 0 0; color: var(--muted); }
+
+    .status {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin: 22px 0 16px;
+    }
+
+    .stat {
+      padding: 12px 8px;
+      border-radius: 16px;
+      text-align: center;
+      background: #f7f2ff;
+    }
+
+    .stat:nth-child(2) { background: #fff3f7; }
+    .stat:nth-child(3) { background: #eefaf4; }
+
+    .stat-label { display: block; color: var(--muted); font-size: .82rem; }
+    .stat-value { display: block; margin-top: 3px; font-size: 1.1rem; font-weight: 800; }
+
+    .progress-wrap {
+      height: 8px;
+      margin: 0 0 20px;
+      overflow: hidden;
+      border-radius: 999px;
+      background: #eee8f2;
+    }
+
+    .progress {
+      width: 0;
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, #ffbad2, #c5b6ff, #a9e8ce);
+      transition: width .25s ease;
+    }
+
+    .message {
+      min-height: 28px;
+      margin: 0 0 14px;
+      text-align: center;
+      font-weight: 700;
+      color: #79668c;
+    }
+
+    .board {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: clamp(8px, 2vw, 13px);
+      width: 100%;
+      margin: 0 auto;
+    }
+
+    .card {
+      display: grid;
+      place-items: center;
+      aspect-ratio: 1 / 1;
+      min-width: 0;
+      padding: 0;
+      border: 2px solid #eadff3;
+      border-radius: 18px;
+      background: linear-gradient(145deg, #f4efff, #fff0f6);
+      box-shadow: 0 4px 0 #e5d9ef;
+      cursor: pointer;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+      transition: transform .15s ease, background .15s ease, border-color .15s ease;
+    }
+
+    .card:hover:not(:disabled) { transform: translateY(-2px); }
+    .card:focus-visible, .action:focus-visible { outline: 3px solid #9b82dd; outline-offset: 3px; }
+    .card .symbol { font-size: clamp(1.7rem, 6vw, 3rem); line-height: 1; }
+    .card .back { font-size: clamp(1.6rem, 5vw, 2.5rem); color: #a18ab8; font-weight: 900; }
+    .card.is-open { background: #fff; border-color: #d7c6f5; box-shadow: 0 4px 0 #d9c9ef; }
+    .card.is-matched { background: #e8f8ef; border-color: #a9dfc2; box-shadow: 0 4px 0 #c4ead4; cursor: default; }
+    .card:disabled { cursor: default; }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 22px;
+    }
+
+    .action {
+      min-height: 44px;
+      padding: 10px 18px;
+      border: 0;
+      border-radius: 999px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: transform .15s ease, opacity .15s ease;
+    }
+
+    .action:hover { transform: translateY(-1px); }
+    .primary { color: #fff; background: #8f79cf; }
+    .secondary { color: #665779; background: #f0e9f7; }
+    .action:disabled { opacity: .45; cursor: not-allowed; transform: none; }
+
+    .help {
+      margin: 18px 0 0;
+      color: var(--muted);
+      text-align: center;
+      font-size: .9rem;
+      line-height: 1.6;
+    }
+
+    .win {
+      padding: 20px;
+      border-radius: 20px;
+      text-align: center;
+      background: #f0fbf5;
+      border: 1px solid #d5f0e1;
+    }
+
+    .win h2 { margin: 0 0 8px; }
+    .win p { margin: 0; color: #6f887b; }
+
+    @media (max-width: 480px) {
+      body { padding: 10px; }
+      .app { padding: 16px 12px 20px; border-radius: 22px; }
+      .status { gap: 6px; margin-top: 18px; }
+      .stat { padding: 10px 4px; border-radius: 12px; }
+      .stat-label { font-size: .74rem; }
+      .stat-value { font-size: 1rem; }
+      .board { gap: 7px; }
+      .card { border-radius: 13px; border-width: 1px; }
+      .action { flex: 1 1 135px; }
+    }
+
+    /* 휴대전화 가로 화면에서는 게임판을 조금 더 넓고 낮게 보여 줍니다. */
+    @media (orientation: landscape) and (max-height: 500px) {
+      body { padding: 8px; }
+      .app { width: min(900px, 100%); padding: 12px 20px; }
+      header { margin-bottom: 8px; }
+      .eyebrow { margin-bottom: 3px; padding: 3px 9px; }
+      h1 { font-size: 1.5rem; }
+      .subtitle { margin-top: 3px; font-size: .85rem; }
+      .status { margin: 10px 0; }
+      .stat { padding: 6px; }
+      .progress-wrap { margin-bottom: 10px; }
+      .message { margin-bottom: 8px; min-height: 20px; }
+      .board { grid-template-columns: repeat(5, minmax(0, 1fr)); max-width: 650px; gap: 7px; }
+      .card { max-height: 105px; border-radius: 12px; }
+      .card .symbol { font-size: clamp(1.3rem, 4vh, 2.2rem); }
+      .controls { margin-top: 12px; }
+      .help { margin-top: 8px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { transition: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header>
+      <span class="eyebrow">차근차근 즐기는 그림 카드 게임</span>
+      <h1>알록달록 그림 짝꿍</h1>
+      <p class="subtitle">같은 동물 그림 두 장을 찾아 짝을 맞춰 보세요.</p>
+    </header>
+
+    <section class="status" aria-label="게임 현황">
+      <div class="stat">
+        <span class="stat-label">미션</span>
+        <span class="stat-value" id="levelLabel">1 / 5</span>
+      </div>
+      <div class="stat">
+        <span class="stat-label">시도 횟수</span>
+        <span class="stat-value" id="attemptLabel">0회</span>
+      </div>
+      <div class="stat">
+        <span class="stat-label">남은 짝</span>
+        <span class="stat-value" id="pairsLabel">3쌍</span>
+      </div>
+    </section>
+
+    <div class="progress-wrap" aria-label="미션 진행률">
+      <div class="progress" id="progressBar"></div>
+    </div>
+
+    <p class="message" id="message" aria-live="polite">카드를 눌러 그림을 확인해 보세요!</p>
+    <section class="board" id="board" aria-label="그림 카드 게임판"></section>
+
+    <div class="controls">
+      <button class="action secondary" id="restartButton" type="button">이 미션 다시 하기</button>
+      <button class="action primary" id="nextButton" type="button" disabled>다음 미션</button>
+    </div>
+
+    <p class="help">시간 제한은 없습니다. 천천히 찾아보세요.<br>소리가 들리지 않으면 기기의 음량을 확인해 주세요.</p>
+  </main>
+
+  <script>
+    // 미션마다 맞춰야 하는 짝의 수: 3쌍, 4쌍, 6쌍, 8쌍, 10쌍
+    const PAIRS_PER_LEVEL = [3, 4, 6, 8, 10];
+
+    // 카드에 사용할 귀여운 동물 그림(이모지)
+    const ANIMALS = ["🐱", "🐶", "🐰", "🐻", "🦊", "🐼", "🐸", "🐨", "🐯", "🐷"];
+
+    const board = document.getElementById("board");
+    const levelLabel = document.getElementById("levelLabel");
+    const attemptLabel = document.getElementById("attemptLabel");
+    const pairsLabel = document.getElementById("pairsLabel");
+    const progressBar = document.getElementById("progressBar");
+    const message = document.getElementById("message");
+    const restartButton = document.getElementById("restartButton");
+    const nextButton = document.getElementById("nextButton");
+
+    let currentLevel = 0;
+    let attempts = 0;
+    let matchedPairs = 0;
+    let openCards = [];
+    let locked = false;
+    let completed = false;
+    let mismatchTimer = null;
+    let audioContext = null;
+
+    // 배열 순서를 무작위로 섞습니다.
+    function shuffle(items) {
+      const shuffled = [...items];
+      for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+      }
+      return shuffled;
+    }
+
+    // Web Audio API로 간단한 효과음을 만듭니다. 별도 음원 파일은 필요하지 않습니다.
+    function playTone(frequency, duration = 0.12, type = "sine") {
+      try {
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContextClass) return;
+        if (!audioContext) audioContext = new AudioContextClass();
+        if (audioContext.state === "suspended") audioContext.resume();
+
+        const oscillator = audioContext.createOscillator();
+        const gain = audioContext.createGain();
+        oscillator.type = type;
+        oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
+        gain.gain.setValueAtTime(0.0001, audioContext.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.12, audioContext.currentTime + 0.015);
+        gain.gain.exponentialRampToValueAtTime(0.0001, audioContext.currentTime + duration);
+        oscillator.connect(gain);
+        gain.connect(audioContext.destination);
+        oscillator.start();
+        oscillator.stop(audioContext.currentTime + duration + 0.02);
+      } catch (error) {
+        // 브라우저가 소리를 허용하지 않아도 게임은 계속할 수 있습니다.
+      }
+    }
+
+    function playMatchSound() {
+      playTone(660, 0.12);
+      window.setTimeout(() => playTone(880, 0.16), 90);
+    }
+
+    function updateStatus() {
+      const totalPairs = PAIRS_PER_LEVEL[currentLevel];
+      levelLabel.textContent = `${currentLevel + 1} / ${PAIRS_PER_LEVEL.length}`;
+      attemptLabel.textContent = `${attempts}회`;
+      pairsLabel.textContent = `${totalPairs - matchedPairs}쌍`;
+      progressBar.style.width = `${(matchedPairs / totalPairs) * 100}%`;
+    }
+
+    function createCard(animal, index) {
+      const card = document.createElement("button");
+      card.type = "button";
+      card.className = "card";
+      card.dataset.animal = animal;
+      card.dataset.index = String(index);
+      card.setAttribute("aria-label", "뒤집힌 그림 카드");
+      card.innerHTML = '<span class="back" aria-hidden="true">?</span>';
+      card.addEventListener("click", () => flipCard(card));
+      return card;
+    }
+
+    function startLevel(level = currentLevel) {
+      if (mismatchTimer !== null) {
+        window.clearTimeout(mismatchTimer);
+        mismatchTimer = null;
+      }
+
+      currentLevel = level;
+      attempts = 0;
+      matchedPairs = 0;
+      openCards = [];
+      locked = false;
+      completed = false;
+
+      const pairCount = PAIRS_PER_LEVEL[currentLevel];
+      const cards = shuffle(ANIMALS.slice(0, pairCount).flatMap(animal => [animal, animal]));
+
+      board.innerHTML = "";
+      // 작은 화면에서는 4열, 큰 화면에서는 4열로 시작합니다.
+      board.style.gridTemplateColumns = cards.length >= 16 ? "repeat(5, minmax(0, 1fr))" : "repeat(4, minmax(0, 1fr))";
+      cards.forEach((animal, index) => board.appendChild(createCard(animal, index)));
+
+      message.textContent = "카드를 눌러 그림을 확인해 보세요!";
+      restartButton.textContent = "이 미션 다시 하기";
+      nextButton.disabled = true;
+      nextButton.textContent = currentLevel === PAIRS_PER_LEVEL.length - 1 ? "마지막 미션" : "다음 미션";
+      updateStatus();
+    }
+
+    function revealCard(card) {
+      card.classList.add("is-open");
+      card.innerHTML = `<span class="symbol" aria-hidden="true">${card.dataset.animal}</span>`;
+      card.setAttribute("aria-label", `그림 ${card.dataset.animal}`);
+    }
+
+    function hideCard(card) {
+      card.classList.remove("is-open");
+      card.innerHTML = '<span class="back" aria-hidden="true">?</span>';
+      card.setAttribute("aria-label", "뒤집힌 그림 카드");
+    }
+
+    function flipCard(card) {
+      if (locked || completed || card.classList.contains("is-open") || card.classList.contains("is-matched")) return;
+
+      revealCard(card);
+      openCards.push(card);
+      playTone(480, 0.07);
+
+      if (openCards.length < 2) {
+        message.textContent = "한 장 더 골라 보세요.";
+        return;
+      }
+
+      attempts += 1;
+      updateStatus();
+
+      const [first, second] = openCards;
+      if (first.dataset.animal === second.dataset.animal) {
+        first.classList.add("is-matched");
+        second.classList.add("is-matched");
+        first.disabled = true;
+        second.disabled = true;
+        first.setAttribute("aria-label", `짝을 맞춘 그림 ${first.dataset.animal}`);
+        second.setAttribute("aria-label", `짝을 맞춘 그림 ${second.dataset.animal}`);
+        matchedPairs += 1;
+        openCards = [];
+        playMatchSound();
+        updateStatus();
+
+        if (matchedPairs === PAIRS_PER_LEVEL[currentLevel]) {
+          completeLevel();
+        } else {
+          message.textContent = "짝을 찾았어요! 정말 잘하셨어요.";
+        }
+      } else {
+        locked = true;
+        message.textContent = "아쉽지만 괜찮아요. 그림을 기억해 보세요!";
+        playTone(220, 0.18, "triangle");
+        mismatchTimer = window.setTimeout(() => {
+          hideCard(first);
+          hideCard(second);
+          openCards = [];
+          locked = false;
+          mismatchTimer = null;
+        }, 850);
+      }
+    }
+
+    function completeLevel() {
+      completed = true;
+      playTone(740, 0.14);
+      window.setTimeout(() => playTone(990, 0.22), 120);
+
+      if (currentLevel < PAIRS_PER_LEVEL.length - 1) {
+        message.textContent = `미션 ${currentLevel + 1} 성공! 다음 미션으로 가 보세요.`;
+        nextButton.disabled = false;
+      } else {
+        message.textContent = "모든 미션을 완료하셨어요! 정말 대단해요.";
+        nextButton.disabled = true;
+        nextButton.textContent = "모든 미션 완료";
+        restartButton.textContent = "처음부터 다시 하기";
+      }
+
+      const oldWin = document.getElementById("winMessage");
+      if (oldWin) oldWin.remove();
+
+      const win = document.createElement("div");
+      win.className = "win";
+      win.id = "winMessage";
+      win.innerHTML = `<h2>${currentLevel === PAIRS_PER_LEVEL.length - 1 ? "🎉 전체 미션 완료!" : "🌟 미션 성공!"}</h2><p>${attempts}번 만에 ${PAIRS_PER_LEVEL[currentLevel]}쌍을 모두 찾으셨어요.</p>`;
+      board.insertAdjacentElement("afterend", win);
+      updateStatus();
+    }
+
+    restartButton.addEventListener("click", () => {
+      const win = document.getElementById("winMessage");
+      if (win) win.remove();
+      // 전체 완료 후에는 1단계부터 다시 시작합니다.
+      startLevel(completed && currentLevel === PAIRS_PER_LEVEL.length - 1 ? 0 : currentLevel);
+    });
+
+    nextButton.addEventListener("click", () => {
+      if (currentLevel < PAIRS_PER_LEVEL.length - 1) {
+        const win = document.getElementById("winMessage");
+        if (win) win.remove();
+        startLevel(currentLevel + 1);
+      }
+    });
+
+    startLevel(0);
+  </script>
+</body>
+</html>
